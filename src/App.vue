@@ -3,23 +3,21 @@
     <section class="todo-list">
       <h3>TODOS List</h3>
       <div class="all-todos">
-        <div
-          v-for="(todo, index) in todos"
-          :key="index"
-          class="single-todo"
-          :class="{ done: todo.done }"
-          @click="
-            todo.done = !todo.done;
-            editTodo(todo);
-          "
-        >
-          <p>{{ todo.name }}</p>
-          <div class="remove-button" @click="deleteTodo(todo.id)">❌</div>
+        <div class="single-todo" v-for="(todo, index) in todos" :key="index">
+          <div
+            :class="{ done: todo.done }"
+            @click="
+              todo.done = !todo.done;
+              editTodo(todo);
+            "
+          >
+            <p>{{ todo.name }}</p>
+          </div>
+          <button class="remove" @click="deleteTodo(todo.id)">❌</button>
         </div>
       </div>
       <input type="text" placeholder="Write a new TODO..." v-model="newText" />
       <button class="add" @click="addTodo()">Add</button>
-
       <div class="instructions">
         Instructions:
         <ul>
@@ -63,11 +61,12 @@ export default {
       axios
         .put(`http://localhost:3000/todos/${todoEdited.id}`, todoEdited)
         .then((response) => {
-          let newTodo = this.tarefas.filter(
-            (todo) => todo.id === todoEdited.id
-          );
-          newTodo.name = response.data.name;
-          newTodo.done = response.data.done;
+          this.todos = this.todos.map((todo) => {
+            if (todo.id === todoEdited.id) {
+              return response.data;
+            }
+            return todo;
+          });
         });
     },
     deleteTodo(id) {
@@ -77,10 +76,12 @@ export default {
     },
   },
   created() {
-    axios.get("http://localhost:3000/todos").then((response) => {
-      let todoslist = response.data;
-      todoslist.forEach((todo) => this.todos.push(todo));
-    });
+    if (this.todos) {
+      axios.get("http://localhost:3000/todos").then((response) => {
+        let todoslist = response.data;
+        todoslist.forEach((todo) => this.todos.push(todo));
+      });
+    }
   },
 };
 </script>
@@ -127,13 +128,6 @@ main button.add {
   margin-left: 2px;
 }
 
-main button.clear {
-  background-color: #dc3545;
-  border: 1px solid #dc3545;
-  display: block;
-  margin: auto;
-}
-
 main button:focus {
   outline: 0;
 }
@@ -166,21 +160,17 @@ main .all-todos .single-todo p {
   cursor: pointer;
 }
 
-main .all-todos .single-todo.done p {
+main .all-todos .single-todo .done p {
   text-decoration: line-through;
 }
 
 main .all-todos .single-todo button.remove {
-  width: 12px;
-  height: 12px;
+  width: 20px;
+  height: 20px;
   border: none;
   background-size: contain;
   cursor: pointer;
   margin-left: 8px;
-}
-
-main > section.todo-list button.clear {
-  margin-top: 24px;
 }
 
 div.instructions {
@@ -197,8 +187,5 @@ div.instructions ul {
 
 div.instructions ul li {
   margin: 4px auto;
-}
-.remove-button {
-  cursor: pointer;
 }
 </style>
