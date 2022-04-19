@@ -1,38 +1,31 @@
 <template>
   <main id="app">
     <section class="todo-list">
-      <h3>Lista de Tarefas</h3>
+      <h3>TODOS List</h3>
       <div class="all-todos">
         <div
-          v-for="(tarefa, index) in tarefas"
+          v-for="(todo, index) in todos"
           :key="index"
           class="single-todo"
-          :class="{ done: tarefa.concluido }"
-          @click="tarefa.concluido = !tarefa.concluido; editarTarefa(tarefa)"
+          :class="{ done: todo.done }"
+          @click="
+            todo.done = !todo.done;
+            editTodo(todo);
+          "
         >
-          <p>{{ tarefa.texto }}</p>
-          <div class="remove-button "
-            @click="excluirTarefa(tarefa.id)"
-          >
-            ❌
-          </div>
+          <p>{{ todo.name }}</p>
+          <div class="remove-button" @click="deleteTodo(todo.id)">❌</div>
         </div>
       </div>
-      <input
-        type="text"
-        placeholder="Escreva uma nova tarefa..."
-        v-model="novoTexto"
-      />
-      <button class="add" @click="addTarefa()">Adicionar</button>
+      <input type="text" placeholder="Write a new TODO..." v-model="newText" />
+      <button class="add" @click="addTodo()">Add</button>
 
       <div class="instructions">
-        Instruções:
+        Instructions:
         <ul>
-          <li>
-            Clique no texto da tarefa para alternar entre feita / não feita
-          </li>
-          <li>Use o X para remover uma tarefa</li>
-          <li>Use o input para adicionar novas tarefas</li>
+          <li>Right click a TODO to change done/ undone</li>
+          <li>Use the X to remove the TODO from the list</li>
+          <li>Use the input to add new TODOS</li>
         </ul>
       </div>
     </section>
@@ -47,56 +40,46 @@ export default {
   components: {},
   data() {
     return {
-      tarefas: [],
-      novoTexto: ""
+      todos: [],
+      newText: "",
     };
   },
   methods: {
-    addTarefa: function () {
-      if (this.novoTexto) {
+    addTodo: function () {
+      if (this.newText) {
         axios
-          .post("http://localhost:3000/todos", { name: this.novoTexto })
+          .post("http://localhost:3000/todos", {
+            name: this.newText,
+          })
           .then((response) => {
-            let novaTarefa = {
-              id: response.data.id,
-              texto: response.data.name,
-              concluido: response.data.done,
-            };
-            this.tarefas.push(novaTarefa);
-            this.novoTexto = "";
+            this.todos.push(response.data);
+            this.newText = "";
           });
       } else {
-        alert("Tarefa não pode ser vazia");
+        alert("TODO name cannot be empty");
       }
     },
-    editarTarefa(tarefa){
-        axios
-          .put(`http://localhost:3000/todos/${tarefa.id}`,{name: tarefa.texto,done: tarefa.concluido})
-          .then((response) => {
-              let tarefaEditada = this.tarefas.filter((todo) => todo.id === tarefa.id)
-              tarefaEditada.texto = response.data.name;
-              tarefaEditada.concluido = response.data.done;
-          })
-    },
-    excluirTarefa(id) {
+    editTodo(todoEdited) {
       axios
-          .delete(`http://localhost:3000/todos/${id}`)
-          .then(() => {
-             this.tarefas = this.tarefas.filter((tarefa) => tarefa.id != id);
+        .put(`http://localhost:3000/todos/${todoEdited.id}`, todoEdited)
+        .then((response) => {
+          let newTodo = this.tarefas.filter(
+            (todo) => todo.id === todoEdited.id
+          );
+          newTodo.name = response.data.name;
+          newTodo.done = response.data.done;
+        });
+    },
+    deleteTodo(id) {
+      axios.delete(`http://localhost:3000/todos/${id}`).then(() => {
+        this.todos = this.todos.filter((todo) => todo.id != id);
       });
     },
   },
   created() {
     axios.get("http://localhost:3000/todos").then((response) => {
-      const todos = response.data;
-      todos.forEach((todo) => {
-        let novaTarefa = {
-          id : todo.id,
-          texto: todo.name,
-          concluido: todo.done,
-        };
-        this.tarefas.push(novaTarefa);
-      });
+      let todoslist = response.data;
+      todoslist.forEach((todo) => this.todos.push(todo));
     });
   },
 };
@@ -215,7 +198,7 @@ div.instructions ul {
 div.instructions ul li {
   margin: 4px auto;
 }
-.remove-button{
+.remove-button {
   cursor: pointer;
 }
 </style>
